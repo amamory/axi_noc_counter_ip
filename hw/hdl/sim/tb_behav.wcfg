@@ -10,15 +10,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="215000001fs"></ZoomEndTime>
-      <Cursor1Time time="1000000000fs"></Cursor1Time>
+      <ZoomStartTime time="186800000fs"></ZoomStartTime>
+      <ZoomEndTime time="395400001fs"></ZoomEndTime>
+      <Cursor1Time time="300000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="179"></NameColumnWidth>
-      <ValueColumnWidth column_width="96"></ValueColumnWidth>
+      <ValueColumnWidth column_width="92"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="16" />
+   <WVObjectSize size="19" />
    <wvobject type="logic" fp_name="/tb/clock">
       <obj_property name="ElementShortName">clock</obj_property>
       <obj_property name="ObjectShortName">clock</obj_property>
@@ -87,16 +87,28 @@
       <obj_property name="ElementShortName">size[15:0]</obj_property>
       <obj_property name="ObjectShortName">size[15:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/router/m_valid_s">
-      <obj_property name="ElementShortName">m_valid_s[2:0]</obj_property>
-      <obj_property name="ObjectShortName">m_valid_s[2:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/router/fifo_wr">
+      <obj_property name="ElementShortName">fifo_wr</obj_property>
+      <obj_property name="ObjectShortName">fifo_wr</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/router/m_last_s">
-      <obj_property name="ElementShortName">m_last_s[2:0]</obj_property>
-      <obj_property name="ObjectShortName">m_last_s[2:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/router/fifo_data_in">
+      <obj_property name="ElementShortName">fifo_data_in[32:0]</obj_property>
+      <obj_property name="ObjectShortName">fifo_data_in[32:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/router/m_data_s">
-      <obj_property name="ElementShortName">m_data_s[2:0][31:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_s[2:0][31:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/router/fifo_full">
+      <obj_property name="ElementShortName">fifo_full</obj_property>
+      <obj_property name="ObjectShortName">fifo_full</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/router/fifo_rd">
+      <obj_property name="ElementShortName">fifo_rd</obj_property>
+      <obj_property name="ObjectShortName">fifo_rd</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/router/fifo_data_out">
+      <obj_property name="ElementShortName">fifo_data_out[32:0]</obj_property>
+      <obj_property name="ObjectShortName">fifo_data_out[32:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/router/fifo_empty">
+      <obj_property name="ElementShortName">fifo_empty</obj_property>
+      <obj_property name="ObjectShortName">fifo_empty</obj_property>
    </wvobject>
 </wave_config>

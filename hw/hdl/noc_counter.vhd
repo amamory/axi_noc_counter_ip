@@ -51,12 +51,18 @@ constant FIFO_SIZE : integer := 3;
 type State_type IS (IDLE, GET_SIZE, GET_SOURCE, SEND_HEADER, SEND_SIZE, SEND_SOURCE, INCREMENTING); 
 signal state : State_Type;    
 
-signal m_valid_s, m_last_s : std_logic_vector(FIFO_SIZE-1 downto 0);
-type Fifo_Type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(31 downto 0);
-signal m_data_s : Fifo_Type;    
-
 signal source_addr : std_logic_vector(15 downto 0);
 signal size : std_logic_vector(15 downto 0);
+
+signal s_ready_s    : std_logic;
+
+-- fifo signals
+signal fifo_wr      : std_logic;
+signal fifo_data_in : std_logic_vector(32 downto 0);
+signal fifo_full    : std_logic;
+signal fifo_rd      : std_logic;
+signal fifo_data_out: std_logic_vector(32 downto 0);
+signal fifo_empty   : std_logic;
 
 --attribute KEEP : string;
 --attribute MARK_DEBUG : string;
@@ -68,60 +74,115 @@ signal size : std_logic_vector(15 downto 0);
 
 begin
 
-    -- the master signals are delayed 3 clock cycles
+    -- write data from the master port into the fifo
     process(clock, reset_n)
     begin
         if (reset_n = '0') then 
-            m_valid_s <= (others => '0');
-            m_last_s <= (others => '0');
-            m_data_s <= (others => (others => '0'));
+            fifo_data_in <= (others => '0');
+            fifo_wr <= '0';
         elsif (clock'event and clock = '1') then
-            m_valid_s <= m_valid_s(FIFO_SIZE-2 downto 0) & s_valid_i;
-            m_last_s <= m_last_s(FIFO_SIZE-2 downto 0) & s_last_i;
-            --m_data_s <= m_data_s(FIFO_SIZE-2 downto 0) & s_data_i;
-            m_data_s(FIFO_SIZE-1 downto 1) <= m_data_s(FIFO_SIZE-2 downto 0);
-            m_data_s(0) <= s_data_i;
+            if s_ready_s = '1' then 
+                fifo_data_in <= s_last_i & s_data_i;
+                fifo_wr <= '1';
+            else
+                fifo_data_in <= (others => '0');
+                fifo_wr <= '0';
+            end if;
         end if;
     end process;
+    
+    -- accepts incomming data as long as the master wants to write and the fifo is not full
+    s_ready_s <= s_valid_i and not fifo_full;
+    s_ready_o <= s_ready_s;
+    
+    
+    u_fifo: entity work.fifo
+      generic map(
+        g_WIDTH => 33,
+        g_DEPTH => 8
+        )
+      port map(
+        i_rst_sync => reset_n,
+        i_clk      => clock,
+     
+        -- FIFO Write Interface
+        i_wr_en   => fifo_wr,
+        i_wr_data => fifo_data_in,
+        o_full    => fifo_full,
+     
+        -- FIFO Read Interface
+        i_rd_en   => fifo_rd,
+        o_rd_data => fifo_data_out,
+        o_empty   => fifo_empty
+        );
+ 
     
 
     process(clock, reset_n)
     begin
         if (reset_n = '0') then 
             state <= IDLE;
-            
             source_addr <= (others => '0');
             size <= (others => '0');
+            fifo_rd <= '0';
         elsif (clock'event and clock = '1') then
             case state is
-                -- wait for the header flit
+                -- wait for fifo not empty and discard the header
                 when IDLE =>
-                    if s_valid_i = '1' then
+                    fifo_rd <= '0';
+                    if fifo_empty = '0' then
                         state <= GET_SIZE;
                     end if; 
-                -- the packet size is not used because we have the last signal to say when the packer is finished
+                -- the outgoing packet will have the same size of the incomming packet. So, its necessary to save it 
                 when GET_SIZE =>
-                    state <= GET_SOURCE;
-                    size <= s_data_i(15 downto 0);
+                    if fifo_empty = '0' then
+                        state <= GET_SOURCE;
+                        size <= fifo_data_out(15 downto 0);
+                        fifo_rd <= '1';
+                    else
+                        state <= GET_SIZE;
+                        fifo_rd <= '0';
+                    end if; 
                 -- it's assuming that the first payload flit will tell the source IP address
                 -- so its possible to send the packet back to it
                 when GET_SOURCE =>
-                    source_addr <= s_data_i(15 downto 0);
-                    state <= SEND_HEADER;
-                -- send the header of the response packet
+                    if fifo_empty = '0' then
+                        source_addr <= fifo_data_out(15 downto 0);
+                        fifo_rd <= '1';
+                        state <= SEND_HEADER;
+                    else
+                        state <= GET_SOURCE;
+                        fifo_rd <= '0';
+                    end if; 
+                -- send the header of the outgoing packet if there is no network contention
                 when SEND_HEADER =>
-                    state <= SEND_SIZE;
-                -- send the size of the response packet
+                    fifo_rd <= '0';
+                    if m_ready_i = '1' then
+                        state <= SEND_SIZE;
+                    end if; 
+                -- send the size of the outgoing packet if there is no network contention
                 when SEND_SIZE =>
-                    state <= SEND_SOURCE;
-                -- send the header of the response packet. just to avoid changing the packet size
+                    fifo_rd <= '0';
+                    if m_ready_i = '1' then
+                        state <= SEND_SOURCE;
+                    end if; 
+                -- send the header of the outgoing packet. just to avoid changing the packet size
                 when SEND_SOURCE =>
-                    state <= INCREMENTING;
+                    fifo_rd <= '0';
+                    if m_ready_i = '1' then
+                        state <= INCREMENTING;
+                    end if; 
                 -- increment the rest of the payload
                 when INCREMENTING =>
-                    if  m_last_s(FIFO_SIZE-1) = '1' then
-                        state <= IDLE;
+                    if  m_ready_i = '1' then
+                        fifo_rd <= '1';
+                        if  fifo_data_out(32) = '1' and m_ready_i = '1' then
+                            state <= IDLE;
+                        else
+                            state <= INCREMENTING;
+                        end if;
                     else
+                        fifo_rd <= '0';
                         state <= INCREMENTING;
                     end if;
             end case;
@@ -129,13 +190,11 @@ begin
 	end process;
 
     -- send the last position of the FIFOs
-    m_valid_o <= m_valid_s(FIFO_SIZE-1);
-    m_last_o <= m_last_s(FIFO_SIZE-1);
-    m_data_o <= x"0000" & source_addr when state = SEND_HEADER or state = SEND_SOURCE else
-                x"0000" & size        when state = SEND_SIZE else
-                m_data_s(FIFO_SIZE-1) + INC_VALUE when state = INCREMENTING else
+    m_valid_o <= '0' when (state = IDLE or state = GET_SIZE  or state = GET_SOURCE) or m_ready_i = '0' else '1';
+    m_last_o <= '1' when state =  INCREMENTING and fifo_data_out(32) = '1' and m_ready_i = '1' else '0';
+    m_data_o <= x"0000" & source_addr when (state = SEND_HEADER or state = SEND_SOURCE) and m_ready_i = '1' else
+                x"0000" & size        when state = SEND_SIZE and m_ready_i = '1' else
+                fifo_data_out(31 downto 0) + INC_VALUE when state = INCREMENTING and m_ready_i = '1' else
                 (others => '0');
-    --always ready to receive since there is no back pressure mechanism
-    s_ready_o <= '1';
 
 end Behavioral;

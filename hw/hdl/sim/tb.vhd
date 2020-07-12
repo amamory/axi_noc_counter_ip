@@ -12,20 +12,23 @@ architecture tb of tb is
     -- change here if you want to send longer packets
     constant MAX_FLITS : integer := 4;
 
-	signal clock:    std_logic := '0';
-	signal reset:    std_logic;  
+	signal clock     : std_logic := '0';
+	signal reset     : std_logic;  
 
 	-- axi slave streaming interface
-	signal s_valid_i :  std_logic;
-	signal s_ready_o :  std_logic;
-	signal s_last_i  :  std_logic;
-	signal s_data_i  :  std_logic_vector(31 downto 0);
+	signal s_valid_i : std_logic;
+	signal s_ready_o : std_logic;
+	signal s_last_i  : std_logic;
+	signal s_data_i  : std_logic_vector(31 downto 0);
 
 	-- axi master streaming interface
-	signal m_valid_o :  std_logic;
-	signal m_ready_i :  std_logic;
-	signal m_last_o  :  std_logic;
-	signal m_data_o  :  std_logic_vector(31 downto 0);
+	signal m_valid_o : std_logic;
+	signal m_ready_i : std_logic;
+	signal m_last_o  : std_logic;
+	signal m_data_o  : std_logic_vector(31 downto 0);
+	
+	-- a simple shift register used to emulate network congestion
+	signal m_ready_value  : std_logic_vector(9 downto 0) := "0010001000";
            
 
     type packet_t is array (0 to MAX_FLITS+1) of std_logic_vector(31 downto 0);	
@@ -99,8 +102,14 @@ begin
 		wait for 10 ns;
 	end process;
 	
-	-- the master ports is always ready to receive
-	m_ready_i <= '1';
+	-- simulates some contention at the master port
+    process(clock)
+    begin
+        if (clock'event and clock = '1') then
+            m_ready_value <= m_ready_value(8 downto 0) & m_ready_value(9); 
+        end if;
+    end process;
+    m_ready_i <= m_ready_value(0);
 
     ----------------------------------------------------
     -- send packets to the slave port
