@@ -38,7 +38,7 @@ port (
 
 	-- axi master streaming interface
 	m_valid_o : out std_logic;
-	m_ready_i : in  std_logic;
+	m_ready_i : in  std_logic; -- TODO, this port is not used and it will cause error when Noc has congestion
 	m_last_o  : out std_logic;
 	m_data_o  : out std_logic_vector(31 downto 0)
 );
