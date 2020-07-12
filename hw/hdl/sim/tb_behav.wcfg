@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="828333333fs"></ZoomStartTime>
+      <ZoomEndTime time="1034333334fs"></ZoomEndTime>
+      <Cursor1Time time="1000000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="179"></NameColumnWidth>
+      <ValueColumnWidth column_width="100"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="13" />
+   <wvobject type="logic" fp_name="/tb/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/reset">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/s_valid_i">
+      <obj_property name="ElementShortName">s_valid_i</obj_property>
+      <obj_property name="ObjectShortName">s_valid_i</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/s_ready_o">
+      <obj_property name="ElementShortName">s_ready_o</obj_property>
+      <obj_property name="ObjectShortName">s_ready_o</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/s_last_i">
+      <obj_property name="ElementShortName">s_last_i</obj_property>
+      <obj_property name="ObjectShortName">s_last_i</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/s_data_i">
+      <obj_property name="ElementShortName">s_data_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_i[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/m_valid_o">
+      <obj_property name="ElementShortName">m_valid_o</obj_property>
+      <obj_property name="ObjectShortName">m_valid_o</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/m_ready_i">
+      <obj_property name="ElementShortName">m_ready_i</obj_property>
+      <obj_property name="ObjectShortName">m_ready_i</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/m_last_o">
+      <obj_property name="ElementShortName">m_last_o</obj_property>
+      <obj_property name="ObjectShortName">m_last_o</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/m_data_o">
+      <obj_property name="ElementShortName">m_data_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_o[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb/router/state">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/router/source_addr">
+      <obj_property name="ElementShortName">source_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">source_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/router/size">
+      <obj_property name="ElementShortName">size[15:0]</obj_property>
+      <obj_property name="ObjectShortName">size[15:0]</obj_property>
+   </wvobject>
+</wave_config>
