@@ -114,16 +114,17 @@ begin
 		wait for 200 ns;
 		wait until rising_edge(clock);
 		
-		-- from the east to local
+		-- assuming its own address is 0x0101
+		-- receiving packet from 0x0000
 		packet := (x"00000101", x"00000002", x"00000000", x"00000001", x"00000000", x"00000000");
 		SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
-		-- from the north to local
+		-- receiving packet from 0x0001
         packet := (x"00000101", x"00000002", x"00000001", x"00000002", x"00000000", x"00000000");
         SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
-		-- from the west to local
+		-- receiving packet from 0x0000
         packet := (x"00000101", x"00000004", x"00000000", x"11111111", x"22222222", x"33333333");
         SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
-		-- from the south to local
+		-- receiving packet from 0x0001
         packet := (x"00000101", x"00000004", x"00000001", x"44444444", x"55555555", x"66666666");
         SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
 		
@@ -136,7 +137,7 @@ begin
   port map ( 
         clock     => clock,
         reset_n   => reset,
-	-- axi slave streaming interface
+	    -- axi slave streaming interface
         s_valid_i => s_valid_i,
         s_ready_o => s_ready_o,
         s_last_i  => s_last_i,

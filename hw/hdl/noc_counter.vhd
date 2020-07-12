@@ -46,14 +46,17 @@ end noc_counter;
 
 architecture Behavioral of noc_counter is
 
-type State_type IS (IDLE, GET_SIZE, GET_SOURCE, SEND_HEADER, SEND_SIZE, INCREMENTING); 
+constant FIFO_SIZE : integer := 3; 
+
+type State_type IS (IDLE, GET_SIZE, GET_SOURCE, SEND_HEADER, SEND_SIZE, SEND_SOURCE, INCREMENTING); 
 signal state : State_Type;    
 
-signal m_data_s : std_logic_vector(31 downto 0);    
+signal m_valid_s, m_last_s : std_logic_vector(FIFO_SIZE-1 downto 0);
+type Fifo_Type is array (FIFO_SIZE-1 downto 0) of std_logic_vector(31 downto 0);
+signal m_data_s : Fifo_Type;    
+
 signal source_addr : std_logic_vector(15 downto 0);
 signal size : std_logic_vector(15 downto 0);
-signal m_valid_s, m_last_s : std_logic_vector(3 downto 0);
-
 
 --attribute KEEP : string;
 --attribute MARK_DEBUG : string;
@@ -71,9 +74,13 @@ begin
         if (reset_n = '0') then 
             m_valid_s <= (others => '0');
             m_last_s <= (others => '0');
-        elsif (clock'event and clock = '0') then
-            m_valid_s <= m_valid_s(2 downto 0) & s_valid_i;
-            m_last_s <= m_last_s(2 downto 0) & s_last_i;
+            m_data_s <= (others => (others => '0'));
+        elsif (clock'event and clock = '1') then
+            m_valid_s <= m_valid_s(FIFO_SIZE-2 downto 0) & s_valid_i;
+            m_last_s <= m_last_s(FIFO_SIZE-2 downto 0) & s_last_i;
+            --m_data_s <= m_data_s(FIFO_SIZE-2 downto 0) & s_data_i;
+            m_data_s(FIFO_SIZE-1 downto 1) <= m_data_s(FIFO_SIZE-2 downto 0);
+            m_data_s(0) <= s_data_i;
         end if;
     end process;
     
@@ -82,10 +89,10 @@ begin
     begin
         if (reset_n = '0') then 
             state <= IDLE;
-            m_data_s <= (others => '0');
+            
             source_addr <= (others => '0');
             size <= (others => '0');
-        elsif (clock'event and clock = '0') then
+        elsif (clock'event and clock = '1') then
             case state is
                 -- wait for the header flit
                 when IDLE =>
@@ -103,16 +110,16 @@ begin
                     state <= SEND_HEADER;
                 -- send the header of the response packet
                 when SEND_HEADER =>
-                    m_data_s <= x"0000" & source_addr;
                     state <= SEND_SIZE;
                 -- send the size of the response packet
                 when SEND_SIZE =>
-                    m_data_s <= (x"0000" & size) -1;
+                    state <= SEND_SOURCE;
+                -- send the header of the response packet. just to avoid changing the packet size
+                when SEND_SOURCE =>
                     state <= INCREMENTING;
                 -- increment the rest of the payload
                 when INCREMENTING =>
-                    m_data_s <= s_data_i + INC_VALUE;
-                    if s_last_i = '1' then
+                    if  m_last_s(FIFO_SIZE-1) = '1' then
                         state <= IDLE;
                     else
                         state <= INCREMENTING;
@@ -121,9 +128,13 @@ begin
         end if; 
 	end process;
 
-    m_valid_o <= m_valid_s(3);
-    m_last_o <= m_last_s(3);
-    m_data_o <= m_data_s;
+    -- send the last position of the FIFOs
+    m_valid_o <= m_valid_s(FIFO_SIZE-1);
+    m_last_o <= m_last_s(FIFO_SIZE-1);
+    m_data_o <= x"0000" & source_addr when state = SEND_HEADER or state = SEND_SOURCE else
+                x"0000" & size        when state = SEND_SIZE else
+                m_data_s(FIFO_SIZE-1) + INC_VALUE when state = INCREMENTING else
+                (others => '0');
     --always ready to receive since there is no back pressure mechanism
     s_ready_o <= '1';
 

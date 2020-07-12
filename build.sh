@@ -1,6 +1,6 @@
 #export VIVADO=/opt/Xilinx/Vivado/2018.2/bin/vivado
 export VIVADO=/home/lsa/xilinx/2018.2/Vivado/2018.2/bin/vivado
-export VIVADO_DESIGN_NAME=ps_hermes
+export VIVADO_DESIGN_NAME=noc_counter
 export VIVADO_TOP_NAME=$VIVADO_DESIGN_NAME
 
 if [ -f $VIVADO ]; then
@@ -23,7 +23,7 @@ if [ -f $VIVADO ]; then
   #hw/ips/axis_s_const/component.xml
   # In summary, if the component.xml is found 3 dir layers below the root dir, then this project is a leaf custom IP
   # if the component.xml is found in more than 3 dir layers, then this project uses custom IPs
-  # Finally, there is no component.xml at all under hw/ips, then this project do not uses any custom IP
+  # Finally, there is no component.xml at all under hw/ips, then this project does not use any custom IP
   leafIPs=$(find hw/ips/*/ -maxdepth 1 -name *.xml | wc -l) 
   if [ "$leafIPs" -eq 0 ]; 
   then
