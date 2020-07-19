@@ -10,9 +10,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="168250000fs"></ZoomStartTime>
-      <ZoomEndTime time="477759636fs"></ZoomEndTime>
-      <Cursor1Time time="300000000fs"></Cursor1Time>
+      <ZoomStartTime time="820500000fs"></ZoomStartTime>
+      <ZoomEndTime time="1035900001fs"></ZoomEndTime>
+      <Cursor1Time time="1000000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="179"></NameColumnWidth>
@@ -75,71 +75,20 @@
       <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="group" fp_name="group78">
-      <obj_property name="label">in_fsm</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="other" fp_name="/tb/router/state_in">
-         <obj_property name="ElementShortName">state_in</obj_property>
-         <obj_property name="ObjectShortName">state_in</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/self_addr">
-         <obj_property name="ElementShortName">self_addr[15:0]</obj_property>
-         <obj_property name="ObjectShortName">self_addr[15:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/size">
-         <obj_property name="ElementShortName">size[15:0]</obj_property>
-         <obj_property name="ObjectShortName">size[15:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/source_addr">
-         <obj_property name="ElementShortName">source_addr[15:0]</obj_property>
-         <obj_property name="ObjectShortName">source_addr[15:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tb/router/fifo_wr">
-         <obj_property name="ElementShortName">fifo_wr</obj_property>
-         <obj_property name="ObjectShortName">fifo_wr</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/fifo_data_in">
-         <obj_property name="ElementShortName">fifo_data_in[32:0]</obj_property>
-         <obj_property name="ObjectShortName">fifo_data_in[32:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tb/router/fifo_full">
-         <obj_property name="ElementShortName">fifo_full</obj_property>
-         <obj_property name="ObjectShortName">fifo_full</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/u_fifo/r_FIFO_DATA">
-         <obj_property name="ElementShortName">r_FIFO_DATA[0:7][32:0]</obj_property>
-         <obj_property name="ObjectShortName">r_FIFO_DATA[0:7][32:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
+   <wvobject type="other" fp_name="/tb/router/state">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
    </wvobject>
-   <wvobject type="other" fp_name="/tb/router/state_handshake">
-      <obj_property name="ElementShortName">state_handshake</obj_property>
-      <obj_property name="ObjectShortName">state_handshake</obj_property>
+   <wvobject type="array" fp_name="/tb/router/self_addr">
+      <obj_property name="ElementShortName">self_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">self_addr[15:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/router/can_send">
-      <obj_property name="ElementShortName">can_send</obj_property>
-      <obj_property name="ObjectShortName">can_send</obj_property>
+   <wvobject type="array" fp_name="/tb/router/size">
+      <obj_property name="ElementShortName">size[15:0]</obj_property>
+      <obj_property name="ObjectShortName">size[15:0]</obj_property>
    </wvobject>
-   <wvobject type="group" fp_name="group79">
-      <obj_property name="label">out_fsm</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="other" fp_name="/tb/router/state_out">
-         <obj_property name="ElementShortName">state_out</obj_property>
-         <obj_property name="ObjectShortName">state_out</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tb/router/fifo_rd">
-         <obj_property name="ElementShortName">fifo_rd</obj_property>
-         <obj_property name="ObjectShortName">fifo_rd</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb/router/fifo_data_out">
-         <obj_property name="ElementShortName">fifo_data_out[32:0]</obj_property>
-         <obj_property name="ObjectShortName">fifo_data_out[32:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tb/router/fifo_empty">
-         <obj_property name="ElementShortName">fifo_empty</obj_property>
-         <obj_property name="ObjectShortName">fifo_empty</obj_property>
-      </wvobject>
+   <wvobject type="array" fp_name="/tb/router/source_addr">
+      <obj_property name="ElementShortName">source_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">source_addr[15:0]</obj_property>
    </wvobject>
 </wave_config>
