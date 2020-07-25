@@ -54,7 +54,7 @@ architecture Behavioral of noc_counter is
 
 -- incomming packet fsm
 type State_type IS (WAIT_IN_HEADER, GET_SIZE, GET_SOURCE, SEND_HEADER, SEND_SIZE, SEND_SOURCE, INCREMENTING_PAYLOAD); 
-signal state : State_Type;    
+signal state, next_state : State_Type;    
 
 -- get the source of the incomming packet , which will be the target of the outgoing packet
 signal source_addr : std_logic_vector(15 downto 0);
@@ -62,91 +62,197 @@ signal source_addr : std_logic_vector(15 downto 0);
 signal self_addr   : std_logic_vector(15 downto 0);
 signal size : std_logic_vector(15 downto 0);
 
---attribute KEEP : string;
+attribute KEEP : string;
 --attribute MARK_DEBUG : string;
 --
---attribute KEEP of state : signal is "TRUE";
+attribute KEEP of state       : signal is "TRUE";
+attribute KEEP of source_addr : signal is "TRUE";
+attribute KEEP of self_addr   : signal is "TRUE";
+attribute KEEP of size        : signal is "TRUE";
 ---- in verilog: (* keep = "true" *) wire signal_name;
 --attribute MARK_DEBUG of state : signal is "TRUE";
 --
 
 begin
 
-  
+    process(clock)
+    begin
+        if (clock'event and clock = '1') then
+            state <= next_state;
+        end if;
+    end process;
+
+    -- TODO remover s_valid_i = '1'
     -- accepts incomming flit if there is something new and if the FSM is in a receiving state
-    s_ready_o <= '1' when s_valid_i = '1' and (state = WAIT_IN_HEADER or state = GET_SIZE  or state = GET_SOURCE) else
+    s_ready_o <= '1' when (state = WAIT_IN_HEADER or state = GET_SIZE  or state = GET_SOURCE) else
                 -- accepts the incomming flit if there is a new flit and the output port can send data 
-                 '1' when s_valid_i = '1' and m_ready_i = '1' and state = INCREMENTING_PAYLOAD  else '0';
+                 '1' when m_ready_i = '1' and state = INCREMENTING_PAYLOAD  else '0';
     
     -- get the packet size and the target address for the response packet
-    process(clock, reset_n)
+    process(state, s_valid_i, m_ready_i, s_last_i )
     begin
-        if (reset_n = '0') then 
-            state <= WAIT_IN_HEADER;
-            source_addr <= (others => '0');
-            self_addr <= (others => '0');
-            size <= (others => '0');
-        elsif (clock'event and clock = '1') then
-            case state is
-                -- get the source of the incomming packet , which will be the target of the outgoing packet
-                when WAIT_IN_HEADER =>
-                    if s_valid_i = '1' then
-                        state <= GET_SIZE;
-                        self_addr <= s_data_i(15 downto 0);
-                    end if; 
-                -- the outgoing packet will have the same size of the incomming packet. So, its necessary to save it 
-                when GET_SIZE =>
-                    if s_valid_i = '1' then
-                        state <= GET_SOURCE;
-                        size <= s_data_i(15 downto 0);
-                    end if; 
-                -- it's assuming that the first payload flit will tell the source noc address
-                -- so its possible to send the packet back to it
-                when GET_SOURCE =>
-                    if s_valid_i = '1' then
-                        state <= SEND_HEADER;
-                        source_addr <= s_data_i(15 downto 0);
-                    end if; 
-                -- send the header of the outgoing packet if there is no network contention
-                when SEND_HEADER =>
-                    if m_ready_i = '1' then
-                        state <= SEND_SIZE;
-                    end if; 
-                -- send the size of the outgoing packet if there is no network contention
-                when SEND_SIZE =>
-                    if m_ready_i = '1' then
-                        state <= SEND_SOURCE;
-                    end if; 
-                -- send the header of the outgoing packet. just to avoid changing the packet size
-                when SEND_SOURCE =>
-                    if m_ready_i = '1' then
-                        state <= INCREMENTING_PAYLOAD;
-                    end if; 
-                -- increment the rest of the payload
-                when INCREMENTING_PAYLOAD =>
-                    if s_valid_i = '1' and  m_ready_i = '1' then
-                        if  s_last_i = '1' then
-                            state <= WAIT_IN_HEADER;
-                        else
-                            state <= INCREMENTING_PAYLOAD;
-                        end if;
+        case state is
+            -- get the source of the incomming packet , which will be the target of the outgoing packet
+            when WAIT_IN_HEADER =>
+                if s_valid_i = '1' then
+                    next_state <= GET_SIZE;
+                else
+                    next_state <= WAIT_IN_HEADER;
+                end if; 
+            -- the outgoing packet will have the same size of the incomming packet. So, its necessary to save it 
+            when GET_SIZE =>
+                if s_valid_i = '1' then
+                    next_state <= GET_SOURCE;
+                else
+                    next_state <= GET_SIZE;
+                end if; 
+            -- it's assuming that the first payload flit will tell the source noc address
+            -- so its possible to send the packet back to it
+            when GET_SOURCE =>
+                if s_valid_i = '1' then
+                    next_state <= SEND_HEADER;
+                else
+                    next_state <= GET_SOURCE;
+                end if; 
+            -- send the header of the outgoing packet if there is no network contention
+            when SEND_HEADER =>
+                if m_ready_i = '1' then
+                    next_state <= SEND_SIZE;
+                else
+                    next_state <= SEND_HEADER;
+                end if; 
+            -- send the size of the outgoing packet if there is no network contention
+            when SEND_SIZE =>
+                if m_ready_i = '1' then
+                    next_state <= SEND_SOURCE;
+                else
+                    next_state <= SEND_SIZE;
+                end if; 
+            -- send the header of the outgoing packet. just to avoid changing the packet size
+            when SEND_SOURCE =>
+                if m_ready_i = '1' then
+                    next_state <= INCREMENTING_PAYLOAD;
+                else
+                    next_state <= SEND_SOURCE;
+                end if; 
+            -- increment the rest of the payload
+            when INCREMENTING_PAYLOAD =>
+                if s_valid_i = '1' and  m_ready_i = '1' then
+                    if  s_last_i = '1' then
+                        next_state <= WAIT_IN_HEADER;
                     else
-                        state <= INCREMENTING_PAYLOAD;
-                    end if;                    
-            end case;
-        end if; 
+                        next_state <= INCREMENTING_PAYLOAD;
+                    end if;
+                else
+                    next_state <= INCREMENTING_PAYLOAD;
+                end if; 
+            when others => 
+                next_state <= WAIT_IN_HEADER;
+        end case;
     end process;    
 
     -- send the last position of the FIFOs
-    m_valid_o <= '1' when m_ready_i = '1' and (state = SEND_HEADER or state = SEND_SIZE or state = SEND_SOURCE) else 
-                 '1' when s_valid_i = '1' and m_ready_i = '1' and state = INCREMENTING_PAYLOAD  else '0';
-                 
-    -- it only read from the fifo when the noc can receive a new flit
-    m_last_o <= '1' when s_valid_i = '1' and m_ready_i = '1' and state = INCREMENTING_PAYLOAD and s_last_i = '1' else '0';
+--    m_valid_o <= '1' when m_ready_i = '1' and (state = SEND_HEADER or state = SEND_SIZE or state = SEND_SOURCE) else 
+--                 '1' when s_valid_i = '1' and m_ready_i = '1' and state = INCREMENTING_PAYLOAD  else '0';
+--                 
+--    -- it only read from the fifo when the noc can receive a new flit
+--    m_last_o <= '1' when s_valid_i = '1' and m_ready_i = '1' and state = INCREMENTING_PAYLOAD and s_last_i = '1' else '0';
+--    m_data_o <= x"0000" & source_addr when state = SEND_HEADER  else
+--                x"0000" & size        when state = SEND_SIZE    else
+--                x"0000" & self_addr   when state = SEND_SOURCE  else
+--                s_data_i + INC_VALUE  when state = INCREMENTING_PAYLOAD else
+--                (others => '0');
+
+    process(clock)
+    begin
+        if (clock'event and clock = '1') then
+            if (reset_n = '0') then 
+                source_addr <= (others => '0');
+                self_addr <= (others => '0');
+                size <= (others => '0');
+                --m_data_o <= (others => '0');
+                --m_valid_o <= '0';
+                --m_last_o <= '0';
+                --s_ready_o <= '0';
+            else
+                if s_valid_i = '1' then
+                    if state = WAIT_IN_HEADER then 
+                        self_addr <= s_data_i(15 downto 0);
+                    end if;
+                    if state = GET_SIZE then 
+                        size <= s_data_i(15 downto 0);
+                    end if;
+                    if state = GET_SOURCE then 
+                        source_addr <= s_data_i(15 downto 0);
+                    end if;
+                end if;
+                --m_valid_o <= '0';
+                --m_last_o <= '0';
+                --s_ready_o <= '0';
+                --case state is
+                --    -- get the source of the incomming packet , which will be the target of the outgoing packet
+                --    --when WAIT_IN =>
+                --    when WAIT_IN_HEADER =>
+                --        if s_valid_i = '1' then
+                --            self_addr <= s_data_i(15 downto 0);
+                --            --s_ready_o <= '1';
+                --        end if; 
+                --    -- the outgoing packet will have the same size of the incomming packet. So, its necessary to save it 
+                --    when GET_SIZE =>
+                --        if s_valid_i = '1' then
+                --            size <= s_data_i(15 downto 0);
+                --            --s_ready_o <= '1';
+                --        end if; 
+                --    -- it's assuming that the first payload flit will tell the source noc address
+                --    -- so its possible to send the packet back to it
+                --    when GET_SOURCE =>
+                --        if s_valid_i = '1' then
+                --            source_addr <= s_data_i(15 downto 0);
+                --            --s_ready_o <= '1';
+                --        end if; 
+                    -- send the header of the outgoing packet if there is no network contention
+                    --when SEND_HEADER =>
+                    --    if m_ready_i = '1' then
+                    --        m_data_o <= x"0000" & source_addr;
+                    --        --m_valid_o <= '1';
+                    --    end if; 
+                    ---- send the size of the outgoing packet if there is no network contention
+                    --when SEND_SIZE =>
+                    --    --m_valid_o <= '1';
+                    --    if m_ready_i = '1' then
+                    --        m_data_o <= x"0000" & size;
+                    --    end if; 
+                    ---- send the header of the outgoing packet. just to avoid changing the packet size
+                    --when SEND_SOURCE =>
+                    --    --m_valid_o <= '1';
+                    --    if m_ready_i = '1' then
+                    --        m_data_o <= x"0000" & self_addr;
+                    --    end if; 
+                    ---- increment the rest of the payload
+                    --when INCREMENTING_PAYLOAD =>
+                    --    --m_valid_o <= '1';
+                    --    if s_valid_i = '1' and  m_ready_i = '1' then
+                    --        --if  s_last_i = '1' then
+                    --        --    m_last_o <= '1';
+                    --        --end if;
+                    --        m_data_o <= s_data_i + INC_VALUE;
+                    --        --s_ready_o <= '1';
+                    --    end if; 
+                --    when others => null;
+                    --    source_addr <= (others => 'X');
+                    --    self_addr <= (others => 'X');
+                    --    size <= (others => 'X');                                           
+                --end case;
+             end if;
+        end if; 
+    end process;    
+
+    m_valid_o <= '1' when state = SEND_HEADER or state = SEND_SIZE or state = SEND_SOURCE or state = INCREMENTING_PAYLOAD else '0';
+    m_last_o <= '1' when state = INCREMENTING_PAYLOAD and s_last_i = '1' and m_ready_i = '1' else '0';
     m_data_o <= x"0000" & source_addr when state = SEND_HEADER  else
                 x"0000" & size        when state = SEND_SIZE    else
                 x"0000" & self_addr   when state = SEND_SOURCE  else
                 s_data_i + INC_VALUE  when state = INCREMENTING_PAYLOAD else
-                (others => '0');
+                (others => '0');                                
 
 end Behavioral;

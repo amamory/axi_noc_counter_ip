@@ -20,6 +20,9 @@ architecture tb of tb is
 	signal s_ready_o : std_logic;
 	signal s_last_i  : std_logic;
 	signal s_data_i  : std_logic_vector(31 downto 0);
+	signal s_valid_s : std_logic;
+	signal s_last_s  : std_logic;
+	signal s_data_s  : std_logic_vector(31 downto 0);
 
 	-- axi master streaming interface
 	signal m_valid_o : std_logic;
@@ -28,7 +31,8 @@ architecture tb of tb is
 	signal m_data_o  : std_logic_vector(31 downto 0);
 	
 	-- a simple shift register used to emulate network congestion
-	signal m_ready_value  : std_logic_vector(9 downto 0) := "0010001000";
+	--signal m_ready_value  : std_logic_vector(9 downto 0) := "0010001000";
+    signal m_ready_value  : std_logic_vector(9 downto 0) := "1110101011";
            
 
     type packet_t is array (0 to MAX_FLITS+1) of std_logic_vector(31 downto 0);	
@@ -38,20 +42,20 @@ architecture tb of tb is
 	                   constant flit : in  std_logic_vector(31 downto 0);
 	                   --- AXI master streaming 
 	                   signal data   : out std_logic_vector(31 downto 0);
-	                   signal valid  : out std_logic;
+	                   --signal valid  : out std_logic;
+	                   signal ready  : in  std_logic;
 	                   signal last   : out std_logic;
-	                   constant end_of_packet   : in std_logic;
-	                   signal ready  : in  std_logic
+	                   constant end_of_packet   : in std_logic
 	                   ) is
 	begin
-		wait until rising_edge(clock);
+		--wait until rising_edge(clock);
 		-- If both the AXI interface and the router runs at the rising edge, then it is necessary to add 
 		--   a delay at the inputs. The solution was to put an inverted in the clock in the Router_Board entity. 
 		-- This way the delay is not necessary and it is also not necessary to change the router's vhdl   
         data <= flit;
-        valid <= '1';
+        --valid <= '1';
         last <= end_of_packet;
-        wait for 8ns; -- simulate delay at the primary inputs
+        wait for 1ns; -- minimal wait required to check the ready signal
         while ready /= '1' loop
              wait until falling_edge(clock); -- data is buffered at the falling edge
         end loop;	
@@ -68,17 +72,25 @@ architecture tb of tb is
         variable num_flits : integer;
     begin
          -- send header
-        SendFlit(clock,packet(0),data,valid,last,'0',ready);
+        wait until rising_edge(clock);
+        valid <= '1';
+        SendFlit(clock,packet(0),data,ready,last,'0');
         -- send size
-        SendFlit(clock,packet(1),data,valid,last,'0',ready);
+        wait until rising_edge(clock);
+        SendFlit(clock,packet(1),data,ready,last,'0');
         num_flits := to_integer(signed(packet(1)));
         -- send payload
         for f in 2 to num_flits loop
-            SendFlit(clock,packet(f),data,valid,last,'0',ready);
+            wait until rising_edge(clock);
+            SendFlit(clock,packet(f),data,ready,last,'0');
         end loop;
-        SendFlit(clock,packet(num_flits+1),data,valid,last,'1',ready);
+        wait until rising_edge(clock);
+        -- TODO: i am not sure if this is a bug or not, i would have to check the AXI streaming protocol spec,
+        -- but when ready is low in the last flit, the last signal remains high for multiple cycles
+        SendFlit(clock,packet(num_flits+1),data,ready,last,'1');
         
       -- end of the packet transfer
+        --
         wait until rising_edge(clock);
         wait for 4 ns;
         last <= '0';
@@ -109,6 +121,8 @@ begin
             m_ready_value <= m_ready_value(8 downto 0) & m_ready_value(9); 
         end if;
     end process;
+    -- small delay from the input ports
+--    m_ready_i <= m_ready_value(0) after 1 ns;
     m_ready_i <= m_ready_value(0);
 
     ----------------------------------------------------
@@ -117,30 +131,37 @@ begin
     process
          variable  packet : packet_t;
 	begin
-	    s_valid_i <= '0';
-		s_data_i <= (others => '0');
-		s_last_i <= '0';
+	    s_valid_s <= '0';
+		s_data_s <= (others => '0');
+		s_last_s <= '0';
 		wait for 200 ns;
 		wait until rising_edge(clock);
 		
 		-- assuming its own address is 0x0101
 		-- receiving packet from 0x0000
 		packet := (x"00000101", x"00000002", x"00000000", x"00000001", x"00000000", x"00000000");
-		SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
+		SendPacket(clock, packet, s_data_s, s_valid_s, s_last_s, s_ready_o);
 		-- receiving packet from 0x0001
         packet := (x"00000101", x"00000002", x"00000001", x"00000002", x"00000000", x"00000000");
-        SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
+        SendPacket(clock, packet, s_data_s, s_valid_s, s_last_s, s_ready_o);
 		-- receiving packet from 0x0000
         packet := (x"00000101", x"00000004", x"00000000", x"11111111", x"22222222", x"33333333");
-        SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
+        SendPacket(clock, packet, s_data_s, s_valid_s, s_last_s, s_ready_o);
 		-- receiving packet from 0x0001
         packet := (x"00000101", x"00000004", x"00000001", x"44444444", x"55555555", x"66666666");
-        SendPacket(clock, packet, s_data_i, s_valid_i, s_last_i, s_ready_o);
+        SendPacket(clock, packet, s_data_s, s_valid_s, s_last_s, s_ready_o);
 		
 		-- block here. do not send it again
 		wait;
-	end process;
+    end process;
 
+    -- small delay from the input ports
+--    s_valid_i <= s_valid_s after 1 ns;
+--    s_data_i <= s_data_s after 1 ns;
+--    s_last_i <= s_last_s after 1 ns;
+    s_valid_i <= s_valid_s ;
+    s_data_i <= s_data_s ;
+    s_last_i <= s_last_s ;
 
  router: entity work.noc_counter
   port map ( 
