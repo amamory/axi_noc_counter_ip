@@ -121,8 +121,7 @@ begin
             m_ready_value <= m_ready_value(8 downto 0) & m_ready_value(9); 
         end if;
     end process;
-    -- small delay from the input ports
---    m_ready_i <= m_ready_value(0) after 1 ns;
+
     m_ready_i <= m_ready_value(0);
 
     ----------------------------------------------------
@@ -155,10 +154,6 @@ begin
 		wait;
     end process;
 
-    -- small delay from the input ports
---    s_valid_i <= s_valid_s after 1 ns;
---    s_data_i <= s_data_s after 1 ns;
---    s_last_i <= s_last_s after 1 ns;
     s_valid_i <= s_valid_s ;
     s_data_i <= s_data_s ;
     s_last_i <= s_last_s ;
